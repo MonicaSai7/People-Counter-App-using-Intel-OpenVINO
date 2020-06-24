@@ -44,15 +44,15 @@ class Network:
         self.infer_request = None
 
     def load_model(self, model, DEVICE, CPU_EXTENSION):
-        self.plugin = IECore
+        print(DEVICE)
+        self.plugin = IECore()
         ### TODO: Load the model ###
         model_xml = model
         model_bin = os.path.splitext(model_xml)[0] + ".bin"
         ### TODO: Check for supported layers ###
         ### TODO: Add any necessary extensions ###
-        if cpu_extension and "CPU" in DEVICE:
+        if CPU_EXTENSION and DEVICE == "CPU":
             self.plugin.add_extension(CPU_EXTENSION, DEVICE)
-        
         self.network = IENetwork(model=model_xml, weights=model_bin)
         self.exec_network = self.plugin.load_network(self.network, DEVICE)
         self.input_blob = max(iter(self.network.inputs))
