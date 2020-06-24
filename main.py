@@ -106,7 +106,7 @@ def infer_on_stream(args, client):
     # image
     elif args.input.endswith('.jpg') or args.input.endswith('.bmp'):
         single_image_mode = True
-        input_validated args.input
+        input_validated = args.input
     
     # video file
     else:
@@ -209,7 +209,7 @@ def infer_on_stream(args, client):
         sys.stdout.flush()
 
         ### TODO: Write an output image if `single_image_mode` ###
-        if single_image_model:
+        if single_image_mode:
             cv2.imwrite("output_image.jpg", frame)
     
     cap.release()
