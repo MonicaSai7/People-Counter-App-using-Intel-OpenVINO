@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 """
  Copyright (c) 2018 Intel Corporation.
-
  Permission is hereby granted, free of charge, to any person obtaining
  a copy of this software and associated documentation files (the
  "Software"), to deal in the Software without restriction, including
@@ -9,10 +8,8 @@
  distribute, sublicense, and/or sell copies of the Software, and to
  permit persons to whom the Software is furnished to do so, subject to
  the following conditions:
-
  The above copyright notice and this permission notice shall be
  included in all copies or substantial portions of the Software.
-
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
  EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
  MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
@@ -25,7 +22,7 @@
 import os
 import sys
 import logging as log
-from openvino.inference_engine import IENetwork, IECore
+from openvino.inference_engine import IENetwork, IEPlugin
 
 
 class Network:
@@ -35,53 +32,128 @@ class Network:
     """
 
     def __init__(self):
-        ### TODO: Initialize any class variables desired ###
+        self.net = None
         self.plugin = None
-        self.network = None
         self.input_blob = None
-        self.output_blob = None
-        self.exec_network = None
-        self.infer_request = None
+        self.out_blob = None
+        self.net_plugin = None
+        self.infer_request_handle = None
 
-    def load_model(self, model, DEVICE, CPU_EXTENSION):
-        print(DEVICE)
-        self.plugin = IECore()
-        ### TODO: Load the model ###
+    def load_model(self, model, device, input_size, output_size, num_requests, cpu_extension=None, plugin=None):
+        """
+         Loads a network and an image to the Inference Engine plugin.
+        :param model: .xml file of pre trained model
+        :param cpu_extension: extension for the CPU device
+        :param device: Target device
+        :param input_size: Number of input layers
+        :param output_size: Number of output layers
+        :param num_requests: Index of Infer request value. Limited to device capabilities.
+        :param plugin: Plugin for specified device
+        :return:  Shape of input layer
+        """
+
         model_xml = model
         model_bin = os.path.splitext(model_xml)[0] + ".bin"
-        ### TODO: Check for supported layers ###
-        ### TODO: Add any necessary extensions ###
-        if CPU_EXTENSION and DEVICE == "CPU":
-            self.plugin.add_extension(CPU_EXTENSION, DEVICE)
-        self.network = IENetwork(model=model_xml, weights=model_bin)
-        self.exec_network = self.plugin.load_network(self.network, DEVICE)
-        self.input_blob = max(iter(self.network.inputs))
-        self.output_blob = max(iter(self.network.outputs))
-        ### TODO: Return the loaded inference plugin ###
-        ### Note: You may need to update the function parameters. ###
-        return
+        # Plugin initialization for specified device
+        # and load extensions library if specified
+        if not plugin:
+            log.info("Initializing plugin for {} device...".format(device))
+            self.plugin = IEPlugin(device=device)
+        else:
+            self.plugin = plugin
+
+        if cpu_extension and 'CPU' in device:
+            self.plugin.add_cpu_extension(cpu_extension)
+
+        # Read IR
+        log.info("Reading IR...")
+        self.net = IENetwork(model=model_xml, weights=model_bin)
+        log.info("Loading IR to the plugin...")
+
+        if self.plugin.device == "CPU":
+            supported_layers = self.plugin.get_supported_layers(self.net)
+            not_supported_layers = \
+                [l for l in self.net.layers.keys() if l not in supported_layers]
+            if len(not_supported_layers) != 0:
+                log.error("Following layers are not supported by "
+                          "the plugin for specified device {}:\n {}".
+                          format(self.plugin.device,
+                                 ', '.join(not_supported_layers)))
+                log.error("Please try to specify cpu extensions library path"
+                          " in command line parameters using -l "
+                          "or --cpu_extension command line argument")
+                sys.exit(1)
+
+        if num_requests == 0:
+            # Loads network read from IR to the plugin
+            self.net_plugin = self.plugin.load(network=self.net)
+        else:
+            self.net_plugin = self.plugin.load(network=self.net, num_requests=num_requests)
+
+        self.input_blob = next(iter(self.net.inputs))
+        self.out_blob = next(iter(self.net.outputs))
+        assert len(self.net.inputs.keys()) == input_size, \
+            "Supports only {} input topologies".format(len(self.net.inputs))
+        assert len(self.net.outputs) == output_size, \
+            "Supports only {} output topologies".format(len(self.net.outputs))
+
+        return self.plugin, self.get_input_shape()
 
     def get_input_shape(self):
-        ### TODO: Return the shape of the input layer ###
-        return self.network.inputs[self.input_blob].shape
+        """
+        Gives the shape of the input layer of the network.
+        :return: None
+        """
+        return self.net.inputs[self.input_blob].shape
 
-    def exec_net(self, net_input, request_id):
-        ### TODO: Start an asynchronous request ###
-        self.infer_request_handle = self.exec_network.start_async(
-            request_id,
-            input=net_input
-        )
-        ### TODO: Return any necessary information ###
-        ### Note: You may need to update the function parameters. ###
-        return
+    def performance_counter(self, request_id):
+        """
+        Queries performance measures per layer to get feedback of what is the
+        most time consuming layer.
+        :param request_id: Index of Infer request value. Limited to device capabilities
+        :return: Performance of the layer  
+        """
+        perf_count = self.net_plugin.requests[request_id].get_perf_counts()
+        return perf_count
 
-    def wait(self):
-        ### TODO: Wait for the request to be complete. ###
-        ### TODO: Return any necessary information ###
-        ### Note: You may need to update the function parameters. ###
-        return self.infer_request_handle.wait()
+    def exec_net(self, request_id, frame):
+        """
+        Starts asynchronous inference for specified request.
+        :param request_id: Index of Infer request value. Limited to device capabilities.
+        :param frame: Input image
+        :return: Instance of Executable Network class
+        """
+        self.infer_request_handle = self.net_plugin.start_async(
+            request_id=request_id, inputs={self.input_blob: frame})
+        return self.net_plugin
 
-    def get_output(self):
-        ### TODO: Extract and return the output results
-        ### Note: You may need to update the function parameters. ###
-        return self.infer_request_handle.outputs[self.output_blob]
+    def wait(self, request_id):
+        """
+        Waits for the result to become available.
+        :param request_id: Index of Infer request value. Limited to device capabilities.
+        :return: Timeout value
+        """
+        wait_process = self.net_plugin.requests[request_id].wait(-1)
+        return wait_process
+
+    def get_output(self, request_id, output=None):
+        """
+        Gives a list of results for the output layer of the network.
+        :param request_id: Index of Infer request value. Limited to device capabilities.
+        :param output: Name of the output layer
+        :return: Results for the specified request
+        """
+        if output:
+            res = self.infer_request_handle.outputs[output]
+        else:
+            res = self.net_plugin.requests[request_id].outputs[self.out_blob]
+        return res
+
+    def clean(self):
+        """
+        Deletes all the instances
+        :return: None
+        """
+        del self.net_plugin
+        del self.plugin
+        del self.net
