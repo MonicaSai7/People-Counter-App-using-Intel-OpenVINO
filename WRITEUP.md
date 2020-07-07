@@ -18,7 +18,7 @@ questions.
             `python main.py -i resources/Pedestrian_Detect_2_1_1.mp4 -m models/inference_model/frozen_inference_graph.xml -l /opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/libcpu_extension_sse4.so -d CPU -pt 0.6 | ffmpeg -v warning -f rawvideo -pixel_format bgr24 -video_size 768x432 -framerate 24 -i - http://0.0.0.0:3000/fac.ffm`
 
 ## 2. Tensorflow SSD ResNet V1
-Use the following steps:
+## Use the following steps:
         1. Download model
             command: `http://download.tensorflow.org/models/object_detection/ssd_resnet50_v1_fpn_shared_box_predictor_640x640_coco14_sync_2018_07_03.tar.gz`
         2. Unpack the downloaded file
