@@ -80,7 +80,7 @@ From the main directory:
    ```
    sudo npm install npm -g 
    rm -rf node_modules
-   npm cache clean
+   npm cache --force clean
    npm config set registry "http://registry.npmjs.org"
    npm install
    ```
