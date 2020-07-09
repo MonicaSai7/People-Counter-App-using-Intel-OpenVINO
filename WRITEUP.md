@@ -56,28 +56,49 @@ Some of the potential reasons for handling custom layers is that there is a poss
 
 ## Comparing Model Performance
 
-My method(s) to compare models before and after conversion to Intermediate Representations
-were...
-
-The difference between model accuracy pre- and post-conversion was...
-
 The size of the model pre- and post-conversion was...
 
 1. Model: ssd_mobilenet_v2_coco_2018_03_29
     size-before: 180 Mb (zip file)
-    size-after: 65 Mb
+    size-after: 67 Mb
 
-2. Model: TensorFlow Resnet v1
-    size-before: 351 Mb
-    size-after: 129Mb
+2. Model: ssd_inception_v2_coco_2018_01_28
+    size-before: 391 Mb
+    size-after: 99 Mb
+
+3. Model: ssd_mobilenet_v1_0.75_depth_300x300_coco14_sync_2018_07_03
+    size-before: 71 Mb
+    size-after: 19 Mb
 
 The inference time of the model pre- and post-conversion was...
 
 1. Model: ssd_mobilenet_v2_coco_2018_03_29
-   avg_infer time: 69-70 ms
+   avg_inference_time: 69-70 ms
           
-2. Model: TensorFlow Resnet v1
-   avg_infer time: 2600 - 2640 ms
+2. Model: ssd_inception_v2_coco_2018_01_28
+   avg_inference_time: 154 - 157 ms
+
+3. Model: ssd_mobilenet_v1_0.75_depth_300x300_coco14_sync_2018_07_03
+   avg_inference_time: 24 - 26 ms
+
+When given the probability thresholds as..
+
+1. pt = 0.3
+   -> ssd_mobilenet_v2_coco_2018_03_29: total counted is 26
+   -> ssd_inception_v2_coco_2018_01_28: total counted is 28
+   -> ssd_mobilenet_v1_0.75_depth_300x300_coco14_sync_2018_07_03: total counted is 275
+
+2. pt = 0.6
+   -> ssd_mobilenet_v2_coco_2018_03_29: total counted is 36
+   -> ssd_inception_v2_coco_2018_01_28: total counted is 25
+   -> ssd_mobilenet_v1_0.75_depth_300x300_coco14_sync_2018_07_03: total counted is 57
+
+3. pt = 0.75
+   -> ssd_mobilenet_v2_coco_2018_03_29: total counted is 37
+   -> ssd_inception_v2_coco_2018_01_28: total counted is 27
+   -> ssd_mobilenet_v1_0.75_depth_300x300_coco14_sync_2018_07_03: total counted is 16
+
+When compared to other models, ssd_mobilenet_v1_0.75_depth_300x300_coco14_sync_2018_07_03 also detected objects other than people in the frame when probability is reduced resulting in 4 - 6 people per frame on an average.
 
 ## Assess Model Use Cases
 
