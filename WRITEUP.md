@@ -73,32 +73,33 @@ The size of the model pre- and post-conversion was...
 The inference time of the model pre- and post-conversion was...
 
 1. Model: ssd_mobilenet_v2_coco_2018_03_29
-   avg_inference_time: 69-70 ms
+   avg_inference_time: 67-70 ms
           
 2. Model: ssd_inception_v2_coco_2018_01_28
-   avg_inference_time: 154 - 157 ms
+   avg_inference_time: 152 - 155 ms
 
 3. Model: ssd_mobilenet_v1_0.75_depth_300x300_coco14_sync_2018_07_03
-   avg_inference_time: 24 - 26 ms
+   avg_inference_time: 26 - 27 ms
 
+Actual number of people present = 6
 When given the probability thresholds as..
 
 1. pt = 0.3
-   -> ssd_mobilenet_v2_coco_2018_03_29: total counted is 26
-   -> ssd_inception_v2_coco_2018_01_28: total counted is 28
-   -> ssd_mobilenet_v1_0.75_depth_300x300_coco14_sync_2018_07_03: total counted is 275
+   -> ssd_mobilenet_v2_coco_2018_03_29: total counted is 5/6 
+   -> ssd_inception_v2_coco_2018_01_28: total counted is 8/6
+   -> ssd_mobilenet_v1_0.75_depth_300x300_coco14_sync_2018_07_03: total counted is 1/6
 
 2. pt = 0.6
-   -> ssd_mobilenet_v2_coco_2018_03_29: total counted is 36
-   -> ssd_inception_v2_coco_2018_01_28: total counted is 25
-   -> ssd_mobilenet_v1_0.75_depth_300x300_coco14_sync_2018_07_03: total counted is 57
+   -> ssd_mobilenet_v2_coco_2018_03_29: total counted is 10/6
+   -> ssd_inception_v2_coco_2018_01_28: total counted is 8/6
+   -> ssd_mobilenet_v1_0.75_depth_300x300_coco14_sync_2018_07_03: total counted is 7/6
 
 3. pt = 0.75
-   -> ssd_mobilenet_v2_coco_2018_03_29: total counted is 37
-   -> ssd_inception_v2_coco_2018_01_28: total counted is 27
-   -> ssd_mobilenet_v1_0.75_depth_300x300_coco14_sync_2018_07_03: total counted is 16
+   -> ssd_mobilenet_v2_coco_2018_03_29: total counted is 6/6
+   -> ssd_inception_v2_coco_2018_01_28: total counted is 8/6
+   -> ssd_mobilenet_v1_0.75_depth_300x300_coco14_sync_2018_07_03: total counted is 1/6
 
-When compared to other models, ssd_mobilenet_v1_0.75_depth_300x300_coco14_sync_2018_07_03 also detected objects other than people in the frame when probability is reduced resulting in 4 - 6 people per frame on an average.
+Total count for ssd_mobilenet_v1_0.75_depth_300x300_coco14_sync_2018_07_03 model at probability threshold 0.3 reuslts in very bad performance as multiple objects are detected for every frame. Similarly, threhsold 0.75 is too high for accurate detection. So, these thresholds are not fit for proper human detection.
 
 ## Assess Model Use Cases
 
