@@ -85,7 +85,7 @@ Actual number of people present = 6
 When given the probability thresholds as..
 
 1. pt = 0.3</br>
-   -> ssd_mobilenet_v2_coco_2018_03_29: total counted is 5/6 </br>
+   -> ssd_mobilenet_v2_coco_2018_03_29: total counted is 5/6</br> 
    -> ssd_inception_v2_coco_2018_01_28: total counted is 8/6</br>
    -> ssd_mobilenet_v1_0.75_depth_300x300_coco14_sync_2018_07_03: total counted is 1/6
 
@@ -100,6 +100,8 @@ When given the probability thresholds as..
    -> ssd_mobilenet_v1_0.75_depth_300x300_coco14_sync_2018_07_03: total counted is 1/6
 
 Total count for ssd_mobilenet_v1_0.75_depth_300x300_coco14_sync_2018_07_03 model at probability threshold 0.3 reuslts in very bad performance as multiple objects are detected for every frame. Similarly, threhsold 0.75 is too high for accurate detection. So, these thresholds are not fit for proper human detection.
+
+Model ssd_inception_v2_coco_2018_01_28 seems to be an optimal solution to this application compared to others.
 
 ## Assess Model Use Cases
 
