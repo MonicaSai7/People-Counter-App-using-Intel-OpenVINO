@@ -106,7 +106,11 @@ def infer_on_stream(args, client):
     prev_count = 0
     total_count = 0
     start_time = 0
-    lag_time = 0
+    total_duration = 0
+    counter = 0
+    dur = 0
+    prev_duration = 0
+    prev_total_count = 0
 
     ### TODO: Loop until stream is over ###
     cap = cv2.VideoCapture(args.input)
@@ -115,9 +119,12 @@ def infer_on_stream(args, client):
     w = int(cap.get(3))
     h = int(cap.get(4))
 
+    fps = cap.get(cv2.CAP_PROP_FPS)
     while cap.isOpened():
         ### TODO: Read from the video capture ###
         flag, frame = cap.read()
+       
+        
         if not flag:
             break
         key_pressed = cv2.waitKey(60)
@@ -130,13 +137,12 @@ def infer_on_stream(args, client):
         ### TODO: Start asynchronous inference for specified request ###
         inference_start = time.time()
         infer_network.exec_net(request_id, p_frame)
-
+        
         ### TODO: Wait for the result ###
         if infer_network.wait(request_id) == 0:
             ### TODO: Get the results of the inference request ###
-            detection_time = time.time() - inference_start
             result = infer_network.get_output(request_id)
-
+            detection_time = time.time() - inference_start
             ### TODO: Extract any desired stats from the results ###
             current_count = 0
             for obj in result[0][0]:
@@ -152,32 +158,43 @@ def infer_on_stream(args, client):
             
             inference_time_msg = "Inference time: {:.3f}ms".format(detection_time * 1000)
             cv2.putText(frame, inference_time_msg, (15, 15), cv2.FONT_HERSHEY_COMPLEX, 0.5, (200, 10, 10), 1)
-
+            
+            if current_count != counter:
+                prev_count, counter = counter, current_count
+                if dur >= 10:
+                    prev_duration = dur
+                    dur = 0
+                else:
+                    dur = prev_duration + dur
+                    prev_duration = 0
+            else:
+                dur += 1
+                if dur == 10 and counter > prev_count:
+                    total_count += counter - prev_count
+                elif dur == 10 and counter < prev_count:
+                    total_duration = (prev_duration * 100)
             ### TODO: Calculate and send relevant information on ###
             ### current_count, total_count and duration to the MQTT server ###
             ### Topic "person": keys of "count" and "total" ###
             ### Topic "person/duration": key of "duration" ###
-            client.publish(inference_time_msg)
-            client.publish("person", json.dumps({"count": current_count}))
-            if current_count < prev_count:
-                duration = int(time.time() - start_time)
-                if duration > 0:
-                    client.publish("person/duration", json.dumps({"duration": duration+lag_time}))
-                else:
-                    lag_time += 1
             
-            prev_count = current_count
-
+            
+            client.publish("person", json.dumps({"count": current_count, "total": total_count}))
+            if total_duration is not None and total_count > prev_total_count:
+                client.publish("person/duration", json.dumps({"duration": total_duration}))
+            
+            prev_total_count = total_count
+            
             if key_pressed == 27: ### Esc pressed
                 break
-
+        
         ### TODO: Send the frame to the FFMPEG server ###
         sys.stdout.buffer.write(frame)
         sys.stdout.flush()
 
         ### TODO: Write an output image if `single_image_mode` ###
         if single_image_mode:
-            cv2.imwrite("output_img,jpg", frame)
+            cv2.imwrite("output_img.jpg", frame)
     
     cap.release()
     cv2.destroyAllWindows()
