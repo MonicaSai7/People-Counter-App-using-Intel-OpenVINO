@@ -29,7 +29,7 @@ questions.
         5. Run model [check port and model path]:
             `python main.py -i resources/Pedestrian_Detect_2_1_1.mp4 -m ssd_inception_v2_coco_2018_01_28/frozen_inference_graph.xml -l /opt/intel/openvino/deployment_tools/inference_engine/lib/intel64/libcpu_extension_sse4.so -d CPU -pt 0.6 | ffmpeg -v warning -f rawvideo -pixel_format bgr24 -video_size 768x432 -framerate 24 -i - http://0.0.0.0:3004/fac.ffm`
        
-## 2. Tensorflow SSD MobileNet V1 0.75 Depth COCO
+## 3. Tensorflow SSD MobileNet V1 0.75 Depth COCO
 ## Use the following steps:
         1. Download model
             command: `wget http://download.tensorflow.org/models/object_detection/ssd_mobilenet_v1_0.75_depth_300x300_coco14_sync_2018_07_03.tar.gz`

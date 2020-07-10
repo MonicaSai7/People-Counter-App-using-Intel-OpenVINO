@@ -103,14 +103,15 @@ def infer_on_stream(args, client):
         assert os.path.isfile(args.input), "File doesn't exist!"
 
     request_id = 0
-    prev_count = 0
     total_count = 0
     start_time = 0
     total_duration = 0
-    counter = 0
-    dur = 0
-    prev_duration = 0
     prev_total_count = 0
+    nframes = 0
+    prev_duration = 0
+    empty_frames = 0
+    start_time = 0
+    prev_count = 0
 
     ### TODO: Loop until stream is over ###
     cap = cv2.VideoCapture(args.input)
@@ -123,7 +124,6 @@ def infer_on_stream(args, client):
     while cap.isOpened():
         ### TODO: Read from the video capture ###
         flag, frame = cap.read()
-       
         
         if not flag:
             break
@@ -158,32 +158,37 @@ def infer_on_stream(args, client):
             
             inference_time_msg = "Inference time: {:.3f}ms".format(detection_time * 1000)
             cv2.putText(frame, inference_time_msg, (15, 15), cv2.FONT_HERSHEY_COMPLEX, 0.5, (200, 10, 10), 1)
-            
-            if current_count != counter:
-                prev_count, counter = counter, current_count
-                if dur >= 10:
-                    prev_duration = dur
-                    dur = 0
+                
+            if current_count > 0:
+                if nframes < 10:
+                    nframes += 1
+                    
+                elif nframes == 10 and empty_frames > 20:
+                    total_count += 1
+                    nframes += 1
+                    empty_frames = 0
+                    
                 else:
-                    dur = prev_duration + dur
-                    prev_duration = 0
+                    pass
+                
             else:
-                dur += 1
-                if dur == 10 and counter > prev_count:
-                    total_count += counter - prev_count
-                elif dur == 10 and counter < prev_count:
-                    total_duration = (prev_duration * 100)
+                empty_frames += 1
+                nframes = 0
+                d_count = 0
+            
             ### TODO: Calculate and send relevant information on ###
             ### current_count, total_count and duration to the MQTT server ###
             ### Topic "person": keys of "count" and "total" ###
             ### Topic "person/duration": key of "duration" ###
             
-            
             client.publish("person", json.dumps({"count": current_count, "total": total_count}))
-            if total_duration is not None and total_count > prev_total_count:
+            if total_count > prev_total_count:
+                total_duration = time.time() - start_time
                 client.publish("person/duration", json.dumps({"duration": total_duration}))
-            
+                start_time = time.time()
+
             prev_total_count = total_count
+            prev_count = current_count
             
             if key_pressed == 27: ### Esc pressed
                 break
